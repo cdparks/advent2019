@@ -1,0 +1,13 @@
+### Before accounting for fuel mass
+
+```console
+stack exec day1 < inputs/day1.txt
+3342351
+```
+
+### After accounting for fuel mass
+
+```console
+stack exec day1 < inputs/day1.txt
+5010664
+```

@@ -7,14 +7,6 @@ import Advent.Prelude
 
 import qualified Pipes.Prelude as Pipes
 
--- Before accounting for fuel mass:
--- > stack exec day1 < inputs/day1.txt
--- > 3342351
---
--- After accounting for fuel mass:
--- > stack exec day1 < inputs/day1.txt
--- > 5010664
-
 main :: IO ()
 main = do
   total <-
