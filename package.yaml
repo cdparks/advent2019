@@ -46,8 +46,8 @@ library:
     - pipes
 
 executables:
-  day1:
-    main: Day1.hs
+  advent:
+    main: Main.hs
     source-dirs: executables
     ghc-options:
     - -threaded

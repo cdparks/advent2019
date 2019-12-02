@@ -1,7 +1,6 @@
-module Main
+module Advent.Day1
   ( main
-  )
-where
+  ) where
 
 import Advent.Prelude
 
