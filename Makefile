@@ -26,17 +26,25 @@ update.tools:
 ## Build
 .PHONY: build
 build:
-	stack build advent --fast --test --no-run-tests --interleaved-output
+	stack build advent --pedantic --fast --interleaved-output
 
 ## Watch
 .PHONY: watch
 watch:
-	stack build advent --fast --test --no-run-tests --interleaved-output --file-watch
+	stack build advent --pedantic --fast --interleaved-output --file-watch
 
-## Run tests
-.PHONY: test
-test:
-	stack build advent --fast --test --interleaved-output --file-watch
+DAY ?= 1
+
+## Run by setting DAY=N
+.PHONY: run
+run: build
+	stack exec advent -- $(DAY) < inputs/day$(DAY).txt
+
+## Clean
+.PHONY: clean
+clean:
+	stack clean advent
+
 
 # Produce help output for Makefile
 #

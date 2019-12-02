@@ -42,8 +42,10 @@ dependencies:
 library:
   source-dirs: library
   dependencies:
-    - relude
     - pipes
+    - relude
+    - text
+    - vector
 
 executables:
   advent:
@@ -55,4 +57,3 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - advent
-    - pipes

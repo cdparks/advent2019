@@ -82,4 +82,5 @@ ghc-options:
     -Wno-implicit-prelude
     -Wno-deriving-typeable
     -Wno-missing-monadfail-instances
+    -optP-Wno-nonportable-include-path
     -fignore-optim-changes

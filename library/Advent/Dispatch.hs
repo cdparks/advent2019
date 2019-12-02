@@ -7,10 +7,10 @@ where
 import Advent.Prelude
 
 import System.Environment (getArgs, getProgName)
-import Data.Char (isSpace)
 
 data Day
   = Day1
+  | Day2
   deriving (Eq, Show)
 
 getDay :: IO Day
@@ -23,10 +23,13 @@ getDay = do
 usage :: IO a
 usage = do
   name <- getProgName
-  die $ name <> " day[N]N"
-  error "unreachable"
+  die $ "usage: " <> name <> " N"
+  error "unreachable" -- Why is die :: IO () instead of IO a?
 
 parseDay :: String -> Maybe Day
-parseDay (c : cs) | isSpace c = parseDay cs
-parseDay ('d' : 'a' : 'y' : cs) | Just 1 <- readMaybe @Int cs = pure Day1
-parseDay _ = Nothing
+parseDay day = do
+  n <- readMaybe @Int day
+  case n of
+    1 -> pure Day1
+    2 -> pure Day2
+    _ -> Nothing
