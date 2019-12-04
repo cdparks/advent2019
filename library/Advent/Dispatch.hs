@@ -9,8 +9,9 @@ import Advent.Prelude
 import System.Environment (getArgs, getProgName)
 
 data Day
-  = Day1
-  | Day2
+  = Day01
+  | Day02
+  | Day03
   deriving (Eq, Show)
 
 getDay :: IO Day
@@ -30,6 +31,7 @@ parseDay :: String -> Maybe Day
 parseDay day = do
   n <- readMaybe @Int day
   case n of
-    1 -> pure Day1
-    2 -> pure Day2
+    1 -> pure Day01
+    2 -> pure Day02
+    3 -> pure Day03
     _ -> Nothing

@@ -42,9 +42,13 @@ dependencies:
 library:
   source-dirs: library
   dependencies:
+    - attoparsec
+    - hashable
+    - microlens
     - pipes
     - relude
     - text
+    - unordered-containers
     - vector
 
 executables:

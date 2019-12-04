@@ -1,4 +1,4 @@
-module Advent.Day1
+module Advent.Day01
   ( main
   ) where
 

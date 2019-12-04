@@ -33,12 +33,12 @@ build:
 watch:
 	stack build advent --pedantic --fast --interleaved-output --file-watch
 
-DAY ?= 1
+day ?= 1
 
-## Run by setting DAY=N
+## Run by setting day=N
 .PHONY: run
 run: build
-	stack exec advent -- $(DAY) < inputs/day$(DAY).txt
+	stack exec advent -- $(day) < inputs/day$(day).txt
 
 ## Clean
 .PHONY: clean
