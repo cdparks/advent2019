@@ -28,6 +28,11 @@ update.tools:
 build:
 	stack build advent --pedantic --fast --interleaved-output
 
+## Build optimized
+.PHONY: opt
+opt:
+	stack build advent --pedantic --interleaved-output
+
 ## Watch
 .PHONY: watch
 watch:
@@ -37,7 +42,7 @@ day ?= 1
 
 ## Run by setting day=N
 .PHONY: run
-run: build
+run: opt
 	stack exec advent -- $(day) < inputs/day$(day).txt
 
 ## Clean

@@ -1,7 +1,9 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TupleSections #-}
 
-module Advent.Day03 where
+module Advent.Day03
+  ( main
+  ) where
 
 import Advent.Prelude hiding (State)
 

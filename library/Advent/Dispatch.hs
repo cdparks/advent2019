@@ -12,6 +12,7 @@ data Day
   = Day01
   | Day02
   | Day03
+  | Day04
   deriving (Eq, Show)
 
 getDay :: IO Day
@@ -34,4 +35,5 @@ parseDay day = do
     1 -> pure Day01
     2 -> pure Day02
     3 -> pure Day03
+    4 -> pure Day04
     _ -> Nothing
