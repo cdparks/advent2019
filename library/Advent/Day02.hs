@@ -5,13 +5,16 @@ where
 
 import Advent.Prelude
 
-import Advent.IntCode (Noun(..), Verb(..))
-import qualified Advent.IntCode as IntCode
+import Advent.IntCode
+import Advent.IntCode.Input (Input(..))
+import Advent.IntCode.Memory ((!))
+import Advent.IntCode.Program
 import Data.Text.IO (getContents)
 
 main :: IO ()
 main = do
-  program <- IntCode.parse <$> getContents
+  program <- parse <$> getContents
   for_ [0 .. 99] $ \noun -> for_ [0 .. 99] $ \verb -> do
-    let memory = IntCode.run (Noun noun) (Verb verb) program
-    when (memory `IntCode.at` 0 == 19690720) $ print $ 100 * noun + verb
+    let
+      memory = fst $ run (Input []) $ patch [(1, Noun noun), (2, Verb verb)] program
+    when (memory ! 0 == 19690720) $ print $ 100 * noun + verb
