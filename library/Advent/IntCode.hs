@@ -1,5 +1,5 @@
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections #-}
 
 module Advent.IntCode
   ( run
@@ -7,34 +7,31 @@ module Advent.IntCode
 where
 
 
-import Advent.Prelude hiding (State, next)
+import Advent.Prelude hiding (next, runState)
 
 import Advent.IntCode.Address (Address)
 import qualified Advent.IntCode.Address as Address
-import Advent.IntCode.Input (Input(..), RawInput)
+import Advent.IntCode.Input (HasInput, Input(..))
 import qualified Advent.IntCode.Input as Input
-import Advent.IntCode.Memory (Memory, RawMemory)
+import qualified Advent.IntCode.Machine as Machine
+import Advent.IntCode.Memory (HasMemory, Memory)
 import qualified Advent.IntCode.Memory as Memory
-import Advent.IntCode.Output (Output(..), RawOutput)
-import qualified Advent.IntCode.Output as Output
+import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
-import qualified Advent.IntCode.Program as Program
-import Control.Monad.ST (ST, runST)
+import Control.Monad.State.Lazy (runState)
+import Lens.Micro
 
 run :: Input -> Program -> (Memory, Output)
-run input program = runST $ do
-  stream <- Input.new input
-  output <- Output.new
-  memory <- Memory.new $ Program.instructions program
-  evaluate stream output memory
-  (,) <$> Memory.freeze memory <*> Output.freeze output
-
-evaluate :: forall s . RawInput s -> RawOutput s -> RawMemory s -> ST s ()
-evaluate input output mem = loop 0
+run input program = (machine ^. Machine.memory, Output output)
  where
-  loop :: Address -> ST s ()
+  ~(output, machine) = runState evaluate $ Machine.new input program
+
+evaluate :: forall  s m . (MonadState s m, HasInput s, HasMemory s) => m [Int]
+evaluate = loop 0
+ where
+  loop :: Address -> m [Int]
   loop pc = do
-    i <- decode <$> Memory.fetch mem pc
+    i <- decode <$> Memory.fetch pc
     case opcode i of
       1 -> arith (+) i pc
       2 -> arith (*) i pc
@@ -44,51 +41,52 @@ evaluate input output mem = loop 0
       6 -> jump (== 0) i pc
       7 -> cmp (<) i pc
       8 -> cmp (==) i pc
-      99 -> pure ()
+      99 -> pure []
       op -> error $ "Unknown op code " <> show op
 
-  next :: Address -> ST s ()
-  next pc = when (pc < Memory.eom mem) $ loop pc
+  next :: Address -> m [Int]
+  next pc = do
+    addr <- Memory.eom
+    if pc < addr then loop pc else pure []
 
-  arith :: (Int -> Int -> Int) -> Instruction -> Address -> ST s ()
+  arith :: (Int -> Int -> Int) -> Instruction -> Address -> m [Int]
   arith f Instruction {..} pc = do
     x <- fetch $ mode1 $ pc + 1
     y <- fetch $ mode2 $ pc + 2
     store (pc + 3) $ f x y
     next $ pc + 4
 
-  cmp :: (Int -> Int -> Bool) -> Instruction -> Address -> ST s ()
+  cmp :: (Int -> Int -> Bool) -> Instruction -> Address -> m [Int]
   cmp f = arith $ \x y -> bool 0 1 $ f x y
 
-  jump :: (Int -> Bool) -> Instruction -> Address -> ST s ()
+  jump :: (Int -> Bool) -> Instruction -> Address -> m [Int]
   jump f Instruction {..} pc = do
     c <- fetch $ mode1 $ pc + 1
     t <- fetch $ mode2 $ pc + 2
-    if f c then next (Address.from t) else next $ pc + 3
+    if f c then next $ Address.from t else next $ pc + 3
 
-  read :: Instruction -> Address -> ST s ()
+  read :: Instruction -> Address -> m [Int]
   read Instruction{} pc = do
-    i <- Input.read input
+    i <- Input.read
     store (pc + 1) i
     next $ pc + 2
 
-  write :: Instruction -> Address -> ST s ()
+  write :: Instruction -> Address -> m [Int]
   write Instruction {..} pc = do
     x <- fetch $ mode1 $ pc + 1
-    Output.write output x
-    next $ pc + 2
+    (x :) <$> next (pc + 2)
 
-  fetch :: Param -> ST s Int
+  fetch :: Param -> m Int
   fetch = \case
-    Imm addr -> Memory.fetch mem addr
+    Imm addr -> Memory.fetch addr
     Pos addr -> do
-      pos <- Memory.fetch mem addr
-      Memory.fetch mem $ Address.from pos
+      pos <- Memory.fetch addr
+      Memory.fetch $ Address.from pos
 
-  store :: Address -> Int -> ST s ()
+  store :: Address -> Int -> m ()
   store addr value = do
-    pos <- Memory.fetch mem addr
-    Memory.store mem (Address.from pos) value
+    pos <- Memory.fetch addr
+    Memory.store (Address.from pos) value
 
 data Param
   = Imm Address

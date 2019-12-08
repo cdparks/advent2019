@@ -1,8 +1,7 @@
 module Advent.IntCode.Input
   ( Input(..)
+  , HasInput(..)
   , parse
-  , RawInput
-  , new
   , read
   )
 where
@@ -10,24 +9,24 @@ where
 import Advent.Prelude
 
 import Advent.Text
-import Control.Monad.ST (ST)
-import Data.STRef (STRef, newSTRef, readSTRef, writeSTRef)
+import Lens.Micro (Lens')
+import Lens.Micro.Mtl (use, (.=))
 
 newtype Input = Input { unInput :: [Int] }
 
 parse :: Text -> Input
 parse = Input . readCommaSep
 
-newtype RawInput s = RawInput (STRef s [Int])
+read :: (MonadState s m, HasInput s) => m Int
+read = use inputLens >>= \case
+  Input [] -> error "Premature end of input"
+  Input (i : is) -> do
+    inputLens .= Input is
+    pure i
 
-new :: Input -> ST s (RawInput s)
-new (Input is) = RawInput <$> newSTRef is
+class HasInput s where
+  inputLens :: Lens' s Input
 
-read :: RawInput s -> ST s Int
-read (RawInput ref) = do
-  input <- readSTRef ref
-  case input of
-    [] -> error "Premature end of input"
-    i : is -> do
-      writeSTRef ref is
-      pure i
+instance HasInput Input where
+  inputLens = id
+  {-# INLINE inputLens #-}

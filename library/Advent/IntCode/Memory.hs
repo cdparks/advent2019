@@ -1,49 +1,50 @@
 module Advent.IntCode.Memory
   ( Memory(..)
+  , fromList
   , (!)
-  , RawMemory
-  , new
+  , HasMemory(..)
   , fetch
   , store
-  , freeze
   , eom
   )
 where
 
-import Advent.Prelude
+import Advent.Prelude hiding (fromList)
 
 import Advent.IntCode.Address (Address)
 import qualified Advent.IntCode.Address as Address
-import Control.Monad.ST (ST)
-import Data.Vector.Unboxed (Vector)
-import qualified Data.Vector.Unboxed as U
-import Data.Vector.Unboxed.Mutable (MVector)
-import qualified Data.Vector.Unboxed.Mutable as M
+import Data.IntMap.Strict (IntMap)
+import qualified Data.IntMap.Strict as IntMap
+import Lens.Micro (Lens')
+import Lens.Micro.Mtl (use, (%=))
 
-newtype Memory = Memory { unMemory :: Vector Int }
-newtype RawMemory s = RawMemory (MVector s Int)
+newtype Memory = Memory { unMemory :: IntMap Int }
 
 infixl 9 !
 (!) :: Memory -> Address -> Int
-(!) (Memory memory) = (U.!) memory . Address.asInt
+(!) (Memory memory) = (IntMap.!) memory . Address.asInt
 {-# INLINE (!) #-}
 
-new :: Vector Int -> ST s (RawMemory s)
-new = fmap RawMemory . U.thaw
-{-# INLINE new #-}
+fromList :: [Int] -> Memory
+fromList = Memory . IntMap.fromList . zip [0 ..]
 
-fetch :: RawMemory s -> Address -> ST s Int
-fetch (RawMemory mem) = M.unsafeRead mem . Address.asInt
-{-# INLINE fetch #-}
+fetch :: (MonadState s m, HasMemory s) => Address -> m Int
+fetch address = do
+  Memory mem <- use memoryLens
+  pure $ mem IntMap.! Address.asInt address
 
-store :: RawMemory s -> Address -> Int -> ST s ()
-store (RawMemory mem) = M.unsafeWrite mem . Address.asInt
-{-# INLINE store #-}
+store :: (MonadState s m, HasMemory s) => Address -> Int -> m ()
+store address value =
+  memoryLens %= coerce (IntMap.insert (Address.asInt address) value)
 
-freeze :: RawMemory s -> ST s Memory
-freeze (RawMemory mem) = Memory <$> U.freeze mem
-{-# INLINE freeze #-}
+eom :: (MonadState s m, HasMemory s) => m Address
+eom = do
+  Memory mem <- use memoryLens
+  pure $ Address.from $ 1 + fst (IntMap.findMax mem)
 
-eom :: RawMemory s -> Address
-eom (RawMemory mem) = Address.from $ M.length mem
-{-# INLINE eom #-}
+class HasMemory s where
+  memoryLens :: Lens' s Memory
+
+instance HasMemory Memory where
+  memoryLens = id
+  {-# INLINE memoryLens #-}
