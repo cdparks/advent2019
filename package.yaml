@@ -43,8 +43,11 @@ library:
   source-dirs: library
   dependencies:
     - attoparsec
+    - containers
     - hashable
     - microlens
+    - microlens-mtl
+    - mtl
     - pipes
     - relude
     - text
