@@ -12,17 +12,19 @@ import qualified Data.HashSet as HashSet
 import Data.Text (split)
 import Data.Text.IO (getContents)
 
-main :: IO ()
-main = do
+main :: Part -> IO ()
+main part = do
   graph <- parse <$> getContents
-  let
-    inverted = invert graph
-    santaParents = parents inverted "SAN"
-    yourParents = parents inverted "YOU"
-    pathUp = yourParents `pathUntil` santaParents
-    pathDown = santaParents `pathUntil` yourParents
-
-  print $ length $ pathUp <> reverse pathDown
+  case part of
+    Part1 -> print $ orbits $ tree graph "COM"
+    Part2 -> do
+      let
+        inverted = invert graph
+        santaParents = parents inverted "SAN"
+        yourParents = parents inverted "YOU"
+        pathUp = yourParents `pathUntil` santaParents
+        pathDown = santaParents `pathUntil` yourParents
+      print $ length $ pathUp <> reverse pathDown
 
 type Tree = Node Label
 type Label = Text
@@ -56,8 +58,8 @@ pathUntil :: [Label] -> [Label] -> [Label]
 pathUntil path other = takeWhile (not . (`HashSet.member` otherSet)) path
   where otherSet = HashSet.fromList other
 
-_orbits :: Tree -> Int
-_orbits = walk 0 where walk n node = n + sum (walk (n + 1) <$> _children node)
+orbits :: Tree -> Int
+orbits = walk 0 where walk n node = n + sum (walk (n + 1) <$> _children node)
 
 parse :: Text -> Graph
 parse text = HashMap.fromListWith (<>) $ do

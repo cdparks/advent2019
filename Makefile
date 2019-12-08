@@ -39,11 +39,17 @@ watch:
 	stack build advent --pedantic --fast --interleaved-output --file-watch
 
 day ?= 1
+part ?= 1
 
-## Run by setting day=N
+## Run by setting day=N part=N
 .PHONY: run
 run: opt
-	stack exec advent -- $(day) < inputs/day$(day).txt
+	DAY=$(day) PART=$(part) stack exec advent < inputs/day$(day).txt
+
+## Generate all solutions
+.PHONY: solutions
+solutions: opt
+	@./solutions.sh
 
 ## Clean
 .PHONY: clean

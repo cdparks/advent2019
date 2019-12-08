@@ -6,12 +6,15 @@ where
 import Advent.Prelude
 
 import Advent.IntCode
-import qualified Advent.IntCode.Input as Input
+import Advent.IntCode.Input (Input(..))
 import Advent.IntCode.Output (Output(..))
 import qualified Advent.IntCode.Program as Program
 
-main :: IO ()
-main = do
+main :: Part -> IO ()
+main part = do
   program <- Program.parse <$> getLine
-  input <- Input.parse <$> getLine
   traverse_ print $ unOutput $ snd $ run input program
+ where
+  input = case part of
+    Part1 -> Input [1]
+    Part2 -> Input [5]

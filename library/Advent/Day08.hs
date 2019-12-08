@@ -6,15 +6,18 @@ where
 import Advent.Prelude
 
 import Data.Char (ord)
+import Data.Foldable (minimumBy)
 import Data.List.Split (chunksOf)
 import qualified Data.Text as T
 import Data.Vector.Unboxed (Vector, (!))
 import qualified Data.Vector.Unboxed as U
 
-main :: IO ()
-main = do
+main :: Part -> IO ()
+main part = do
   layers <- parse n <$> getLine
-  render w $ toColor layers <$> [0 .. (n - 1)]
+  case part of
+    Part1 -> print $ checksum $ minimumBy (comparing $ count 0) layers
+    Part2 -> render w $ toColor layers <$> [0 .. (n - 1)]
  where
   w = 25
   h = 6
@@ -41,6 +44,12 @@ parse n text = case T.length text of
 
 new :: Text -> Layer
 new = U.fromList . fmap (subtract zero . ord) . T.unpack where zero = ord '0'
+
+checksum :: Layer -> Int
+checksum layer = count 1 layer * count 2 layer
+
+count :: Int -> Vector Int -> Int
+count n = U.length . U.filter (== n)
 
 type Layer = Vector Int
 

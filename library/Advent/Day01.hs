@@ -1,20 +1,27 @@
 module Advent.Day01
   ( main
-  ) where
+  )
+where
 
 import Advent.Prelude
 
 import qualified Pipes.Prelude as Pipes
 
-main :: IO ()
-main = do
+main :: Part -> IO ()
+main part = do
   total <-
     Pipes.sum
-    $ Pipes.map fuelNeeded
+    $ Pipes.map calculateFuel
     <-< Pipes.mapFoldable readMaybe
     <-< Pipes.stdinLn
   print total
+ where
+  calculateFuel = case part of
+    Part1 -> fuelForMass
+    Part2 -> totalFuelNeeded
 
-fuelNeeded :: Int -> Int
-fuelNeeded = sum . takeWhile (> 0) . iterate step . step
-  where step !mass = max 0 (mass `div` 3 - 2)
+fuelForMass :: Int -> Int
+fuelForMass !mass = max 0 $ mass `div` 3 - 2
+
+totalFuelNeeded :: Int -> Int
+totalFuelNeeded = sum . takeWhile (> 0) . iterate fuelForMass . fuelForMass

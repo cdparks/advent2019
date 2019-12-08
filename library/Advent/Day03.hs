@@ -3,7 +3,8 @@
 
 module Advent.Day03
   ( main
-  ) where
+  )
+where
 
 import Advent.Prelude hiding (State)
 
@@ -17,14 +18,16 @@ import GHC.Generics (Generic)
 import Lens.Micro
 import System.IO.Error (userError)
 
-main :: IO ()
-main = do
+main :: Part -> IO ()
+main part = do
   wire1 <- parseThrows parseWire =<< getLine
   wire2 <- parseThrows parseWire =<< getLine
-  print $ getSum $ minimum $ HashMap.elems $ HashMap.intersectionWith
-    (+)
-    (countSteps wire1)
-    (countSteps wire2)
+  let
+    intersections =
+      HashMap.intersectionWith (+) (countSteps wire1) (countSteps wire2)
+  case part of
+    Part1 -> print $ minimum $ manhattan <$> HashMap.keys intersections
+    Part2 -> print $ getSum $ minimum $ HashMap.elems intersections
 
 data Step = U | D | L | R
   deriving (Eq, Show)
@@ -101,3 +104,6 @@ parseSteps = do
     ]
   n <- decimal
   pure $ replicate n step
+
+manhattan :: Point -> Int
+manhattan p = p ^. x + p ^. y

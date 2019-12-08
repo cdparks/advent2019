@@ -12,15 +12,26 @@ import qualified Data.Vector.Unboxed as U
 import Data.Vector.Unboxed.Mutable (MVector)
 import qualified Data.Vector.Unboxed.Mutable as V
 
-main :: IO ()
-main = print $ length $ filter (valid . pairs . digits) [178416 .. 676461]
+main :: Part -> IO ()
+main part =
+  print . length . filter (criteria . pairs . digits) $ [178416 .. 676461]
+ where
+  criteria = case part of
+    Part1 -> valid1
+    Part2 -> valid2
 
 -- Strict pair
 data Pair = Pair {-# UNPACK #-} Int Int
   deriving Show
 
-valid :: [Pair] -> Bool
-valid ps0 = runST $ do
+valid1 :: [Pair] -> Bool
+valid1 ps = any same ps && all neverDecreases ps
+ where
+  same (Pair x y) = x == y
+  neverDecreases (Pair x y) = x <= y
+
+valid2 :: [Pair] -> Bool
+valid2 ps0 = runST $ do
   dupes <- V.replicate 10 0
   loop dupes ps0
  where
