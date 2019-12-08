@@ -2,7 +2,30 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 .DEFAULT_GOAL := help
 
-## Update local state with any remote changes
+## Generate all solutions
+.PHONY: solutions
+solutions: opt
+	@./solutions.sh
+
+day ?= 1
+part ?= 1
+
+## Generate solution for one day by setting [day=N] [part=N]
+.PHONY: run
+run: opt
+	DAY=$(day) PART=$(part) stack exec advent < inputs/day$(day).txt
+
+## Build unoptimized
+.PHONY: build
+build:
+	stack build advent --pedantic --fast --interleaved-output
+
+## Build optimized
+.PHONY: opt
+opt:
+	stack build advent --pedantic --interleaved-output
+
+## Update compiler, dependencies, and tools
 .PHONY: update
 update:
 	$(MAKE) update.stack update.tools
@@ -23,39 +46,10 @@ update.tools:
 	  stylish-haskell \
 	  brittany
 
-## Build
-.PHONY: build
-build:
-	stack build advent --pedantic --fast --interleaved-output
-
-## Build optimized
-.PHONY: opt
-opt:
-	stack build advent --pedantic --interleaved-output
-
-## Watch
-.PHONY: watch
-watch:
-	stack build advent --pedantic --fast --interleaved-output --file-watch
-
-day ?= 1
-part ?= 1
-
-## Run by setting day=N part=N
-.PHONY: run
-run: opt
-	DAY=$(day) PART=$(part) stack exec advent < inputs/day$(day).txt
-
-## Generate all solutions
-.PHONY: solutions
-solutions: opt
-	@./solutions.sh
-
-## Clean
+## Clean project
 .PHONY: clean
 clean:
 	stack clean advent
-
 
 # Produce help output for Makefile
 #
