@@ -50,6 +50,7 @@ library:
     - mtl
     - pipes
     - relude
+    - split
     - text
     - unordered-containers
     - vector
