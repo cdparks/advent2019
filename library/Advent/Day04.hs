@@ -21,7 +21,7 @@ main part =
     Part2 -> valid2
 
 -- Strict pair
-data Pair = Pair {-# UNPACK #-} Int Int
+data Pair = Pair {-# UNPACK #-} Int {-# UNPACK #-} Int
   deriving Show
 
 valid1 :: [Pair] -> Bool
