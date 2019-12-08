@@ -9,7 +9,7 @@ Run `make` without a target to show help
 ```console
 make
 Usage
-solutions             Generate all solutions
+solutions             Generate and test all solutions
 run                   Generate solution for one day by setting [day=N] [part=N]
 build                 Build unoptimized
 opt                   Build optimized

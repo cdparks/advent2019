@@ -2,7 +2,7 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 .DEFAULT_GOAL := help
 
-## Generate all solutions
+## Generate and test all solutions
 .PHONY: solutions
 solutions: opt
 	@./solutions.sh
