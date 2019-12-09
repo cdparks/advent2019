@@ -13,6 +13,7 @@ import qualified Advent.Day05 as Day05
 import qualified Advent.Day06 as Day06
 import qualified Advent.Day07 as Day07
 import qualified Advent.Day08 as Day08
+import qualified Advent.Day09 as Day09
 import Data.Text (pack, unpack)
 import System.Environment (getProgName, lookupEnv)
 
@@ -29,6 +30,7 @@ main = do
     6 -> Day06.main part
     7 -> Day07.main part
     8 -> Day08.main part
+    9 -> Day09.main part
     _
       | day <= 25 -> usage "Day not implemented yet"
       | otherwise -> usage "Day out of range"
