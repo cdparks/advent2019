@@ -3,4 +3,4 @@ module Advent.IntCode.Mode
   )
 where
 
-data Mode = Immediate | Position
+data Mode = Immediate | Absolute | Relative

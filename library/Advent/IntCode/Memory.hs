@@ -22,16 +22,15 @@ newtype Memory = Memory { unMemory :: IntMap Int }
 
 infixl 9 !
 (!) :: Memory -> Address -> Int
-(!) (Memory memory) = (IntMap.!) memory . Address.asInt
+(!) (Memory memory) address = IntMap.findWithDefault 0 index memory
+  where index = Address.asInt address
 {-# INLINE (!) #-}
 
 fromList :: [Int] -> Memory
 fromList = Memory . IntMap.fromList . zip [0 ..]
 
 fetch :: (MonadState s m, HasMemory s) => Address -> m Int
-fetch address = do
-  Memory mem <- use memoryLens
-  pure $ mem IntMap.! Address.asInt address
+fetch address = (! address) <$> use memoryLens
 
 store :: (MonadState s m, HasMemory s) => Address -> Int -> m ()
 store address value =

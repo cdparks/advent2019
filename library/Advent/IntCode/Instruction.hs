@@ -12,7 +12,7 @@ data Instruction = Instruction
   { opcode :: Int
   , mode1 :: Mode
   , mode2 :: Mode
-  , mode3 :: Mode -- currently unused
+  , mode3 :: Mode
   }
 
 decode :: Int -> Instruction
@@ -28,4 +28,5 @@ decode i = Instruction
   c = b `div` 10
   mode x
     | x `mod` 10 == 1 = Immediate
-    | otherwise = Position
+    | x `mod` 10 == 2 = Relative
+    | otherwise = Absolute

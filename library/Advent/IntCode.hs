@@ -11,11 +11,11 @@ import Advent.Prelude hiding (runState)
 import qualified Advent.IntCode.Address as Address
 import Advent.IntCode.Input (HasInput, Input(..))
 import qualified Advent.IntCode.Input as Input
-import Advent.IntCode.Machine (HasPC(..))
+import Advent.IntCode.Instruction (Instruction(..), decode)
+import Advent.IntCode.Machine (HasBase(..), HasPC(..))
 import qualified Advent.IntCode.Machine as Machine
 import Advent.IntCode.Memory (HasMemory, Memory)
 import qualified Advent.IntCode.Memory as Memory
-import Advent.IntCode.Instruction (Instruction(..), decode)
 import Advent.IntCode.Mode (Mode(..))
 import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
@@ -28,18 +28,21 @@ run input program = (machine ^. Machine.memory, Output output)
   where ~(output, machine) = runState eval $ Machine.new input program
 
 eval
-  :: forall  s m . (MonadState s m, HasPC s, HasInput s, HasMemory s) => m [Int]
+  :: forall s m
+   . (MonadState s m, HasPC s, HasBase s, HasInput s, HasMemory s)
+  => m [Int]
 eval = decoded $ \i -> case opcode i of
-    1 -> arith (+) i
-    2 -> arith (*) i
-    3 -> read i
-    4 -> write i
-    5 -> jump (/= 0) i
-    6 -> jump (== 0) i
-    7 -> cmp (<) i
-    8 -> cmp (==) i
-    99 -> pure []
-    op -> error $ "Unknown op code " <> show op
+  1 -> arith (+) i
+  2 -> arith (*) i
+  3 -> read i
+  4 -> write i
+  5 -> jump (/= 0) i
+  6 -> jump (== 0) i
+  7 -> cmp (<) i
+  8 -> cmp (==) i
+  9 -> adjustBase i
+  99 -> pure []
+  op -> error $ "Unknown op code " <> show op
  where
   decoded :: (Instruction -> m [Int]) -> m [Int]
   decoded body = do
@@ -51,7 +54,7 @@ eval = decoded $ \i -> case opcode i of
   arith f Instruction {..} = do
     x <- fetch mode1
     y <- fetch mode2
-    store $ f x y
+    store mode3 $ f x y
     eval
 
   cmp :: (Int -> Int -> Bool) -> Instruction -> m [Int]
@@ -65,9 +68,9 @@ eval = decoded $ \i -> case opcode i of
     eval
 
   read :: Instruction -> m [Int]
-  read Instruction{} = do
+  read Instruction{..} = do
     i <- Input.read
-    store i
+    store mode1 i
     eval
 
   write :: Instruction -> m [Int]
@@ -75,19 +78,32 @@ eval = decoded $ \i -> case opcode i of
     x <- fetch mode1
     (x :) <$> eval
 
+  adjustBase :: Instruction -> m [Int]
+  adjustBase Instruction {..} = do
+    offset <- fetch mode1
+    baseLens += Address.from offset
+    eval
+
   fetch :: Mode -> m Int
   fetch mode = do
-    addr <- use pcLens
+    pc <- use pcLens
+    addr <- Memory.fetch pc
     pcLens += 1
     case mode of
-      Immediate -> Memory.fetch addr
-      Position -> do
-        pos <- Memory.fetch addr
-        Memory.fetch $ Address.from pos
+      Immediate -> pure addr
+      Absolute -> Memory.fetch $ Address.from addr
+      Relative -> do
+        base <- use baseLens
+        Memory.fetch $ base + Address.from addr
 
-  store :: Int -> m ()
-  store value = do
-    addr <- use pcLens
+  store :: Mode -> Int -> m ()
+  store mode value = do
+    pc <- use pcLens
+    addr <- Memory.fetch pc
     pcLens += 1
-    pos <- Memory.fetch addr
-    Memory.store (Address.from pos) value
+    case mode of
+      Immediate -> error "Cannot store to immediate parameter"
+      Absolute -> Memory.store (Address.from addr) value
+      Relative -> do
+        base <- use baseLens
+        Memory.store (base + Address.from addr) value

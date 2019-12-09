@@ -1,6 +1,7 @@
 module Advent.IntCode.Machine
   ( Machine
   , HasPC(..)
+  , HasBase(..)
   , input
   , memory
   , new
@@ -17,11 +18,16 @@ import qualified Advent.IntCode.Program as Program
 import Lens.Micro
 
 new :: Input -> Program -> Machine
-new input0 program =
-  Machine { _pc = 0, _input = input0, _memory = Program.asMemory program }
+new input0 program = Machine
+  { _pc = 0
+  , _base = 0
+  , _input = input0
+  , _memory = Program.asMemory program
+  }
 
 data Machine = Machine
   { _pc :: Address
+  , _base :: Address
   , _input :: Input
   , _memory :: Memory
   }
@@ -29,6 +35,10 @@ data Machine = Machine
 pc :: Lens' Machine Address
 pc = lens _pc $ \m x -> m { _pc = x }
 {-# INLINE pc #-}
+
+base :: Lens' Machine Address
+base = lens _base $ \m x -> m { _base = x }
+{-# INLINE base #-}
 
 input :: Lens' Machine Input
 input = lens _input $ \m x -> m { _input = x }
@@ -44,6 +54,13 @@ class HasPC s where
 instance HasPC Machine where
   pcLens = pc
   {-# INLINE pcLens #-}
+
+class HasBase s where
+  baseLens :: Lens' s Address
+
+instance HasBase Machine where
+  baseLens = base
+  {-# INLINE baseLens #-}
 
 instance HasMemory Machine where
   memoryLens = memory
