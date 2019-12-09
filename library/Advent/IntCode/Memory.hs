@@ -5,7 +5,6 @@ module Advent.IntCode.Memory
   , HasMemory(..)
   , fetch
   , store
-  , eom
   )
 where
 
@@ -35,11 +34,6 @@ fetch address = (! address) <$> use memoryLens
 store :: (MonadState s m, HasMemory s) => Address -> Int -> m ()
 store address value =
   memoryLens %= coerce (IntMap.insert (Address.asInt address) value)
-
-eom :: (MonadState s m, HasMemory s) => m Address
-eom = do
-  Memory mem <- use memoryLens
-  pure $ Address.from $ 1 + fst (IntMap.findMax mem)
 
 class HasMemory s where
   memoryLens :: Lens' s Memory
