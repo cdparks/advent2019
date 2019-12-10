@@ -8,13 +8,13 @@ where
 
 import Advent.Prelude hiding (State)
 
+import Advent.Point
 import Control.Exception (throwIO)
 import Data.Attoparsec.Text hiding (D)
 import Data.Foldable (minimum)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import Data.Monoid (Sum(..))
-import GHC.Generics (Generic)
 import Lens.Micro
 import System.IO.Error (userError)
 
@@ -31,18 +31,6 @@ main part = do
 
 data Step = U | D | L | R
   deriving (Eq, Show)
-
-data Point = Point
-  { _x :: {-# UNPACK #-} Int
-  , _y :: {-# UNPACK #-} Int
-  }
-  deriving (Eq, Show, Generic, Hashable)
-
-x :: Lens' Point Int
-x = lens _x $ \p v -> p { _x = v }
-
-y :: Lens' Point Int
-y = lens _y $ \p v -> p { _y = v }
 
 data State = State
   { _pos :: {-# UNPACK #-} Point
