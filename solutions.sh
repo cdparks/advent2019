@@ -5,9 +5,13 @@ set -eu
 mkdir -p .solutions
 rm -f .solutions/*
 
-for i in $(ls inputs/ | sed -E 's/day([0-9]+)\.txt/\1/' | sort -n); do
+for input in $(find inputs/ -name '*.txt' | sort -n); do
+  i=$(echo "$input" | sed -E 's/.+day([0-9]+)\.txt/\1/')
   for j in $(seq 1 2); do
-    command="DAY=$i PART=$j stack exec advent < inputs/day$i.txt | tee .solutions/day$i-$j.txt && diff expected/day$i-$j.txt .solutions/day$i-$j.txt"
+    output=day$i-$j.txt
+    solution=.solutions/$output
+    expected=expected/$output
+    command="DAY=$i PART=$j stack exec advent < $input | tee $solution && diff $expected $solution"
     echo "$command" && sh -c "$command" && printf "\n"
   done;
 done;
