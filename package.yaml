@@ -10,7 +10,7 @@ copyright: "2019 Christopher Parks"
 extra-source-files:
 - README.md
 
-description: Please see the README on GitHub at <https://github.com/cdparks/advent#readme>
+description: Please see the README on GitHub at <https://github.com/cdparks/advent2019#readme>
 
 default-extensions:
   - BangPatterns
@@ -60,6 +60,9 @@ executables:
     main: Main.hs
     source-dirs: executables
     ghc-options:
+    - -Werror
+    - -Wall
+    - -O2
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
