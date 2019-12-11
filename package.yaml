@@ -45,6 +45,7 @@ library:
     - attoparsec
     - containers
     - hashable
+    - JuicyPixels
     - microlens
     - microlens-mtl
     - mtl

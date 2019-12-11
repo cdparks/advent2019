@@ -6,13 +6,17 @@ where
 import Advent.Prelude
 
 import Advent.Point (Point(..))
+import Codec.Picture
 import Data.Foldable (maximumBy)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HashSet
 import Data.List (sortOn, transpose, (!!))
 import Data.Text (Text, unpack)
 import Data.Text.IO (getContents)
 import GHC.Float (atan2)
+import System.Environment (lookupEnv)
 
 main :: Part -> IO ()
 main part = do
@@ -26,6 +30,7 @@ main part = do
     Part2 -> do
       let Point x y = unshift location $ nth 200 asteroids
       print $ x * 100 + y
+  traverse_ (animate location asteroids) =<< lookupEnv "SAVE"
 
 parse :: Text -> [Point]
 parse = concat . zipWith parseLine [0 ..] . lines
@@ -90,3 +95,96 @@ focus = go []
  where
   go _ [] = []
   go xs (y : ys) = (y, xs <> ys) : go (y : xs) ys
+
+animate :: Point -> HashMap Point [Point] -> FilePath -> IO ()
+animate origin points filename = do
+  scale <- fromMaybe 12 <$> lookupNum "SCALE"
+  delay <- fromMaybe 8 <$> lookupNum "DELAY"
+  putStrLn $ "Saving animation to " <> filename
+  let
+    frames = generateFrames scale origin points
+    eAction = writeGifAnimation filename delay LoopingForever frames
+  case eAction of
+    Left err -> putStrLn err
+    Right action -> do
+      action
+      putStrLn "Done"
+  where lookupNum name = (readMaybe =<<) <$> lookupEnv name
+
+getBounds :: [Point] -> (Int, Int)
+getBounds = foldl' step (0, 0)
+  where step (!mx, !my) (Point x y) = (max mx x, max my y)
+
+generateFrames :: Int -> Point -> HashMap Point [Point] -> [Image PixelRGB8]
+generateFrames scale origin points = loop (HashSet.fromList allPoints) targets
+ where
+  (mx, my) = getBounds allPoints
+
+  targets :: [Point]
+  targets = unshift origin <$> spiral points
+
+  allPoints :: [Point]
+  allPoints = origin : do
+    bucket <- HashMap.elems points
+    point <- bucket
+    pure $ unshift origin point
+
+  toLine :: Point -> HashSet Point
+  toLine =
+    HashSet.fromList
+      . fmap (unshift origin)
+      . plotLine (Point 0 0)
+      . shift origin
+
+  loop :: HashSet Point -> [Point] -> [Image PixelRGB8]
+  loop _ [] = []
+  loop !space (t : ts) =
+    generateImage
+        (shade (Scene scale origin (toLine t) t space))
+        (mx * scale)
+        (my * scale)
+      : loop (HashSet.delete t space) ts
+
+data Scene = Scene
+  { _scale :: Int
+  , _origin :: Point
+  , _line :: HashSet Point
+  , _target :: Point
+  , _points :: HashSet Point
+  }
+
+shade :: Scene -> Int -> Int -> PixelRGB8
+shade Scene {..} !x !y
+  | point == _origin = PixelRGB8 255 0 0
+  | point == _target = PixelRGB8 0 255 0
+  | inLine = PixelRGB8 0 0 255
+  | alive = PixelRGB8 255 255 255
+  | otherwise = PixelRGB8 0 0 0
+ where
+  point = Point (x `div` _scale) (y `div` _scale)
+  alive = point `HashSet.member` _points
+  inLine = point `HashSet.member` _line
+
+plotLine :: Point -> Point -> [Point]
+plotLine (Point x0 y0) (Point x1 y1) = loop x0 y0 $ dx + dy
+ where
+  dx = abs $ x1 - x0
+  sx = if x0 < x1 then 1 else negate 1
+
+  dy = negate $ abs $ y1 - y0
+  sy = if y0 < y1 then 1 else negate 1
+
+  loop !x !y !err
+    | x == x1 && y == y1 = []
+    | otherwise = Point x y : loop x' y' err'
+   where
+    err2 = 2 * err
+    dyErr = err2 >= dy
+    dxErr = err2 <= dx
+    x' = x + iff dyErr sx
+    y' = y + iff dxErr sy
+    err' = err + iff dyErr dy + iff dxErr dx
+
+iff :: Bool -> Int -> Int
+iff cond n = if cond then n else 0
+{-# INLINE iff #-}
