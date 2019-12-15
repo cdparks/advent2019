@@ -5,7 +5,7 @@ MAKEFLAGS += --no-builtin-rules
 ## Generate and test all solutions
 .PHONY: solutions
 solutions: opt
-	@./solutions.sh
+	@./solutions
 
 day ?= 1
 part ?= 1
