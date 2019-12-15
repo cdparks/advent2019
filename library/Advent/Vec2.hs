@@ -1,7 +1,7 @@
 {-# LANGUAGE StrictData #-}
 
-module Advent.Point
-  ( Point(..)
+module Advent.Vec2
+  ( Vec2(..)
   , x
   , y
   )
@@ -13,30 +13,30 @@ import GHC.Generics (Generic)
 import Lens.Micro
 import Text.Show
 
-data Point a = Point
+data Vec2 a = Vec2
   { _x :: a
   , _y :: a
   }
   deriving stock (Eq, Ord, Generic, Functor, Foldable, Traversable)
   deriving anyclass (Hashable)
 
-instance Applicative Point where
-  pure a = Point a a
-  Point f g <*> Point a b = Point (f a) (g b)
+instance Applicative Vec2 where
+  pure a = Vec2 a a
+  Vec2 f g <*> Vec2 a b = Vec2 (f a) (g b)
 
-instance Show a => Show (Point a) where
-  showsPrec _ Point {..} =
+instance Show a => Show (Vec2 a) where
+  showsPrec _ Vec2 {..} =
     showChar '(' . shows _x . showString ", " . shows _y . showChar ')'
 
-x :: Lens' (Point a) a
+x :: Lens' (Vec2 a) a
 x = lens _x $ \p v -> p { _x = v }
 
-y :: Lens' (Point a) a
+y :: Lens' (Vec2 a) a
 y = lens _y $ \p v -> p { _y = v }
 
 -- brittany-disable-next-binding
 
-instance Num a => Num (Point a) where
+instance Num a => Num (Vec2 a) where
   fromInteger = pure . fromInteger
   {-# INLINE fromInteger #-}
   (+) = liftA2 (+)

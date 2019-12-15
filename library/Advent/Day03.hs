@@ -8,8 +8,8 @@ where
 
 import Advent.Prelude hiding (State)
 
-import Advent.Point (Point(..))
-import qualified Advent.Point as Point
+import Advent.Vec2 (Vec2(..))
+import qualified Advent.Vec2 as Vec2
 import Control.Exception (throwIO)
 import Data.Attoparsec.Text hiding (D)
 import Data.Foldable (minimum)
@@ -34,32 +34,32 @@ data Step = U | D | L | R
   deriving (Eq, Show)
 
 data State = State
-  { _pos :: Point Int
+  { _pos :: Vec2 Int
   , _steps :: Sum Int
-  , _points :: HashMap (Point Int) (Sum Int)
+  , _points :: HashMap (Vec2 Int) (Sum Int)
   }
 
-pos :: Lens' State (Point Int)
+pos :: Lens' State (Vec2 Int)
 pos = lens _pos $ \s v -> s { _pos = v }
 
 steps :: Lens' State (Sum Int)
 steps = lens _steps $ \s v -> s { _steps = v }
 
-points :: Lens' State (HashMap (Point Int) (Sum Int))
+points :: Lens' State (HashMap (Vec2 Int) (Sum Int))
 points = lens _points $ \s v -> s { _points = v }
 
-countSteps :: [Step] -> HashMap (Point Int) (Sum Int)
+countSteps :: [Step] -> HashMap (Vec2 Int) (Sum Int)
 countSteps ps = foldl' step (State 0 1 HashMap.empty) ps ^. points
  where
   step s = \case
-    U -> stepBy (Point.y +~ 1) s
-    D -> stepBy (Point.y -~ 1) s
-    L -> stepBy (Point.x -~ 1) s
-    R -> stepBy (Point.x +~ 1) s
+    U -> stepBy (Vec2.y +~ 1) s
+    D -> stepBy (Vec2.y -~ 1) s
+    L -> stepBy (Vec2.x -~ 1) s
+    R -> stepBy (Vec2.x +~ 1) s
 
 -- brittany-disable-next-binding
 
-stepBy :: (Point Int -> Point Int) -> State -> State
+stepBy :: (Vec2 Int -> Vec2 Int) -> State -> State
 stepBy f s = s
   & pos .~ newPos
   & steps %~ (+ 1)
@@ -93,5 +93,5 @@ parseSteps = do
   n <- decimal
   pure $ replicate n step
 
-manhattan :: Point Int -> Int
-manhattan p = p ^. Point.x + p ^. Point.y
+manhattan :: Vec2 Int -> Int
+manhattan p = p ^. Vec2.x + p ^. Vec2.y

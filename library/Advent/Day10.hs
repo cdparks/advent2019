@@ -6,7 +6,7 @@ where
 import Advent.Prelude
 
 import Advent.List (focus)
-import Advent.Point (Point(..))
+import Advent.Vec2 (Vec2(..))
 import Codec.Picture
 import Data.Foldable (maximumBy)
 import Data.HashMap.Strict (HashMap)
@@ -29,24 +29,24 @@ main part = do
   case part of
     Part1 -> print $ HashMap.size asteroids
     Part2 -> do
-      let Point x y = unshift location $ nth 200 asteroids
+      let Vec2 x y = unshift location $ nth 200 asteroids
       print $ x * 100 + y
   traverse_ (animate location asteroids) =<< lookupEnv "SAVE"
 
-parse :: Text -> [Point Int]
+parse :: Text -> [Vec2 Int]
 parse = concat . zipWith parseLine [0 ..] . lines
  where
   parseLine y = catMaybes . zipWith (`plot` y) [0 ..] . unpack
   plot x y = \case
-    '#' -> pure $ Point x y
+    '#' -> pure $ Vec2 x y
     _ -> Nothing
 
-nth :: Int -> HashMap (Point Int) [Point Int] -> Point Int
+nth :: Int -> HashMap (Vec2 Int) [Vec2 Int] -> Vec2 Int
 nth n points = spiral points !! (n - 1)
 
 -- brittany-disable-next-binding
 
-spiral :: HashMap (Point Int) [Point Int] -> [Point Int]
+spiral :: HashMap (Vec2 Int) [Vec2 Int] -> [Vec2 Int]
 spiral =
   concat
   . transpose
@@ -56,14 +56,14 @@ spiral =
 
 -- brittany-disable-next-binding
 
-partition :: Point Int -> [Point Int] -> HashMap (Point Int) [Point Int]
+partition :: Vec2 Int -> [Vec2 Int] -> HashMap (Vec2 Int) [Vec2 Int]
 partition origin =
   HashMap.map (sortOn distSquared)
   . HashMap.fromListWith (<>)
   . fmap (collapse . shift origin)
 
-firingAngle :: Point Int -> Double
-firingAngle (Point x y)
+firingAngle :: Vec2 Int -> Double
+firingAngle (Vec2 x y)
   | theta < 0 = convert $ theta + 360
   | otherwise = convert $ theta
  where
@@ -76,22 +76,22 @@ fmod x m
   | x < m = x
   | otherwise = fmod (x - m) m
 
-distSquared :: Point Int -> Int
-distSquared (Point x y) = x * x + y * y
+distSquared :: Vec2 Int -> Int
+distSquared (Vec2 x y) = x * x + y * y
 
-shift :: Point Int -> Point Int -> Point Int
+shift :: Vec2 Int -> Vec2 Int -> Vec2 Int
 shift origin p = p - origin
 
-unshift :: Point Int -> Point Int -> Point Int
+unshift :: Vec2 Int -> Vec2 Int -> Vec2 Int
 unshift origin p = p + origin
 
-collapse :: Point Int -> (Point Int, [Point Int])
-collapse point@(Point x y) = (collapsed, [point])
+collapse :: Vec2 Int -> (Vec2 Int, [Vec2 Int])
+collapse point@(Vec2 x y) = (collapsed, [point])
  where
-  collapsed = Point (x `div` d) (y `div` d)
+  collapsed = Vec2 (x `div` d) (y `div` d)
   d = gcd x y
 
-animate :: Point Int -> HashMap (Point Int) [Point Int] -> FilePath -> IO ()
+animate :: Vec2 Int -> HashMap (Vec2 Int) [Vec2 Int] -> FilePath -> IO ()
 animate origin points filename = do
   scale <- fromMaybe 12 <$> lookupNum "SCALE"
   delay <- fromMaybe 8 <$> lookupNum "DELAY"
@@ -106,29 +106,29 @@ animate origin points filename = do
       putStrLn "Done"
   where lookupNum name = (readMaybe =<<) <$> lookupEnv name
 
-getBounds :: [Point Int] -> (Int, Int)
+getBounds :: [Vec2 Int] -> (Int, Int)
 getBounds = foldl' step (0, 0)
-  where step (!mx, !my) (Point x y) = (max mx x, max my y)
+  where step (!mx, !my) (Vec2 x y) = (max mx x, max my y)
 
 generateFrames
-  :: Int -> Point Int -> HashMap (Point Int) [Point Int] -> [Image PixelRGB8]
-generateFrames scale origin points = loop (HashSet.fromList allPoint) targets
+  :: Int -> Vec2 Int -> HashMap (Vec2 Int) [Vec2 Int] -> [Image PixelRGB8]
+generateFrames scale origin points = loop (HashSet.fromList allVec2) targets
  where
-  (mx, my) = getBounds allPoint
+  (mx, my) = getBounds allVec2
 
-  targets :: [Point Int]
+  targets :: [Vec2 Int]
   targets = unshift origin <$> spiral points
 
-  allPoint :: [Point Int]
-  allPoint = origin : do
+  allVec2 :: [Vec2 Int]
+  allVec2 = origin : do
     bucket <- HashMap.elems points
     point <- bucket
     pure $ unshift origin point
 
-  toLine :: Point Int -> HashSet (Point Int)
+  toLine :: Vec2 Int -> HashSet (Vec2 Int)
   toLine = HashSet.fromList . fmap (unshift origin) . plotLine 0 . shift origin
 
-  loop :: HashSet (Point Int) -> [Point Int] -> [Image PixelRGB8]
+  loop :: HashSet (Vec2 Int) -> [Vec2 Int] -> [Image PixelRGB8]
   loop _ [] = []
   loop !space (t : ts) =
     generateImage
@@ -139,10 +139,10 @@ generateFrames scale origin points = loop (HashSet.fromList allPoint) targets
 
 data Scene = Scene
   { _scale :: Int
-  , _origin :: Point Int
-  , _line :: HashSet (Point Int)
-  , _target :: Point Int
-  , _points :: HashSet (Point Int)
+  , _origin :: Vec2 Int
+  , _line :: HashSet (Vec2 Int)
+  , _target :: Vec2 Int
+  , _points :: HashSet (Vec2 Int)
   }
 
 shade :: Scene -> Int -> Int -> PixelRGB8
@@ -153,12 +153,12 @@ shade Scene {..} !x !y
   | alive = PixelRGB8 255 255 255
   | otherwise = PixelRGB8 0 0 0
  where
-  point = Point (x `div` _scale) (y `div` _scale)
+  point = Vec2 (x `div` _scale) (y `div` _scale)
   alive = point `HashSet.member` _points
   inLine = point `HashSet.member` _line
 
-plotLine :: Point Int -> Point Int -> [Point Int]
-plotLine (Point x0 y0) (Point x1 y1) = loop x0 y0 $ dx + dy
+plotLine :: Vec2 Int -> Vec2 Int -> [Vec2 Int]
+plotLine (Vec2 x0 y0) (Vec2 x1 y1) = loop x0 y0 $ dx + dy
  where
   dx = abs $ x1 - x0
   sx = if x0 < x1 then 1 else negate 1
@@ -168,7 +168,7 @@ plotLine (Point x0 y0) (Point x1 y1) = loop x0 y0 $ dx + dy
 
   loop !x !y !err
     | x == x1 && y == y1 = []
-    | otherwise = Point x y : loop x' y' err'
+    | otherwise = Vec2 x y : loop x' y' err'
    where
     err2 = 2 * err
     dyErr = err2 >= dy

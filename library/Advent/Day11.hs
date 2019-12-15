@@ -10,8 +10,8 @@ import Advent.IntCode.Input (Input(..))
 import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
 import qualified Advent.IntCode.Program as Program
-import Advent.Point (Point(..))
-import qualified Advent.Point as Point
+import Advent.Vec2 (Vec2(..))
+import qualified Advent.Vec2 as Vec2
 import Data.Foldable (maximum)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
@@ -34,25 +34,25 @@ paint color program = last states
   output = unOutput $ snd $ run input program
   input = Input $ fromEnum <$> color : (current <$> states)
 
-render :: HashMap (Point Int) Color -> IO ()
+render :: HashMap (Vec2 Int) Color -> IO ()
 render space = do
   traverse_ putStrLn $ chunksOf (mx + 1) $ do
     y <- [0 .. my]
     x <- [0 .. mx]
-    pure $ toChar $ at (Point x y) space
+    pure $ toChar $ at (Vec2 x y) space
  where
-  Point mx my = bounds space
+  Vec2 mx my = bounds space
   toChar = \case
     White -> '█'
     Black -> ' '
 
-bounds :: HashMap (Point Int) Color -> Point Int
-bounds space = Point (maximum $ _x <$> painted) (maximum $ _y <$> painted)
+bounds :: HashMap (Vec2 Int) Color -> Vec2 Int
+bounds space = Vec2 (maximum $ _x <$> painted) (maximum $ _y <$> painted)
   where painted = HashMap.keys $ HashMap.filter (== White) space
 
 data State = State
-  { _panel :: HashMap (Point Int) Color
-  , _pos :: Point Int
+  { _panel :: HashMap (Vec2 Int) Color
+  , _pos :: Vec2 Int
   , _heading :: Heading
   }
 
@@ -67,16 +67,16 @@ data Color = Black | White
 data Turn = Left | Right
   deriving (Eq, Enum)
 
-move :: Point Int -> Heading -> Turn -> (Point Int, Heading)
+move :: Vec2 Int -> Heading -> Turn -> (Vec2 Int, Heading)
 move point heading0 turn = (step heading point, heading)
   where heading = rotate heading0 turn
 
-step :: Heading -> Point Int -> Point Int
+step :: Heading -> Vec2 Int -> Vec2 Int
 step = \case
-  North -> Point.y -~ 1
-  South -> Point.y +~ 1
-  East -> Point.x +~ 1
-  West -> Point.x -~ 1
+  North -> Vec2.y -~ 1
+  South -> Vec2.y +~ 1
+  East -> Vec2.x +~ 1
+  West -> Vec2.x -~ 1
 
 rotate :: Heading -> Turn -> Heading
 rotate heading turn = case (heading, turn) of
@@ -105,5 +105,5 @@ scan state0 _ = [state0]
 current :: State -> Color
 current State {..} = at _pos _panel
 
-at :: Point Int -> HashMap (Point Int) Color -> Color
+at :: Vec2 Int -> HashMap (Vec2 Int) Color -> Color
 at point = HashMap.lookupDefault Black point
