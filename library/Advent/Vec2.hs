@@ -4,6 +4,7 @@ module Advent.Vec2
   ( Vec2(..)
   , x
   , y
+  , scalars
   )
 where
 
@@ -33,6 +34,9 @@ x = lens _x $ \p v -> p { _x = v }
 
 y :: Lens' (Vec2 a) a
 y = lens _y $ \p v -> p { _y = v }
+
+scalars :: Vec2 a -> [a]
+scalars v = (v ^.) <$> [x, y]
 
 -- brittany-disable-next-binding
 
