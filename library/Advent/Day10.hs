@@ -5,6 +5,7 @@ where
 
 import Advent.Prelude
 
+import Advent.List (focus)
 import Advent.Point (Point(..))
 import Codec.Picture
 import Data.Foldable (maximumBy)
@@ -32,7 +33,7 @@ main part = do
       print $ x * 100 + y
   traverse_ (animate location asteroids) =<< lookupEnv "SAVE"
 
-parse :: Text -> [Point]
+parse :: Text -> [Point Int]
 parse = concat . zipWith parseLine [0 ..] . lines
  where
   parseLine y = catMaybes . zipWith (`plot` y) [0 ..] . unpack
@@ -40,12 +41,12 @@ parse = concat . zipWith parseLine [0 ..] . lines
     '#' -> pure $ Point x y
     _ -> Nothing
 
-nth :: Int -> HashMap Point [Point] -> Point
+nth :: Int -> HashMap (Point Int) [Point Int] -> Point Int
 nth n points = spiral points !! (n - 1)
 
 -- brittany-disable-next-binding
 
-spiral :: HashMap Point [Point] -> [Point]
+spiral :: HashMap (Point Int) [Point Int] -> [Point Int]
 spiral =
   concat
   . transpose
@@ -55,13 +56,13 @@ spiral =
 
 -- brittany-disable-next-binding
 
-partition :: Point -> [Point] -> HashMap Point [Point]
+partition :: Point Int -> [Point Int] -> HashMap (Point Int) [Point Int]
 partition origin =
   HashMap.map (sortOn distSquared)
   . HashMap.fromListWith (<>)
   . fmap (collapse . shift origin)
 
-firingAngle :: Point -> Double
+firingAngle :: Point Int -> Double
 firingAngle (Point x y)
   | theta < 0 = convert $ theta + 360
   | otherwise = convert $ theta
@@ -75,28 +76,22 @@ fmod x m
   | x < m = x
   | otherwise = fmod (x - m) m
 
-distSquared :: Point -> Int
+distSquared :: Point Int -> Int
 distSquared (Point x y) = x * x + y * y
 
-shift :: Point -> Point -> Point
-shift (Point dx dy) (Point x y) = Point (x - dx) (y - dy)
+shift :: Point Int -> Point Int -> Point Int
+shift origin p = p - origin
 
-unshift :: Point -> Point -> Point
-unshift (Point dx dy) (Point x y) = Point (x + dx) (y + dy)
+unshift :: Point Int -> Point Int -> Point Int
+unshift origin p = p + origin
 
-collapse :: Point -> (Point, [Point])
+collapse :: Point Int -> (Point Int, [Point Int])
 collapse point@(Point x y) = (collapsed, [point])
  where
   collapsed = Point (x `div` d) (y `div` d)
   d = gcd x y
 
-focus :: [a] -> [(a, [a])]
-focus = go []
- where
-  go _ [] = []
-  go xs (y : ys) = (y, xs <> ys) : go (y : xs) ys
-
-animate :: Point -> HashMap Point [Point] -> FilePath -> IO ()
+animate :: Point Int -> HashMap (Point Int) [Point Int] -> FilePath -> IO ()
 animate origin points filename = do
   scale <- fromMaybe 12 <$> lookupNum "SCALE"
   delay <- fromMaybe 8 <$> lookupNum "DELAY"
@@ -111,32 +106,29 @@ animate origin points filename = do
       putStrLn "Done"
   where lookupNum name = (readMaybe =<<) <$> lookupEnv name
 
-getBounds :: [Point] -> (Int, Int)
+getBounds :: [Point Int] -> (Int, Int)
 getBounds = foldl' step (0, 0)
   where step (!mx, !my) (Point x y) = (max mx x, max my y)
 
-generateFrames :: Int -> Point -> HashMap Point [Point] -> [Image PixelRGB8]
-generateFrames scale origin points = loop (HashSet.fromList allPoints) targets
+generateFrames
+  :: Int -> Point Int -> HashMap (Point Int) [Point Int] -> [Image PixelRGB8]
+generateFrames scale origin points = loop (HashSet.fromList allPoint) targets
  where
-  (mx, my) = getBounds allPoints
+  (mx, my) = getBounds allPoint
 
-  targets :: [Point]
+  targets :: [Point Int]
   targets = unshift origin <$> spiral points
 
-  allPoints :: [Point]
-  allPoints = origin : do
+  allPoint :: [Point Int]
+  allPoint = origin : do
     bucket <- HashMap.elems points
     point <- bucket
     pure $ unshift origin point
 
-  toLine :: Point -> HashSet Point
-  toLine =
-    HashSet.fromList
-      . fmap (unshift origin)
-      . plotLine (Point 0 0)
-      . shift origin
+  toLine :: Point Int -> HashSet (Point Int)
+  toLine = HashSet.fromList . fmap (unshift origin) . plotLine 0 . shift origin
 
-  loop :: HashSet Point -> [Point] -> [Image PixelRGB8]
+  loop :: HashSet (Point Int) -> [Point Int] -> [Image PixelRGB8]
   loop _ [] = []
   loop !space (t : ts) =
     generateImage
@@ -147,10 +139,10 @@ generateFrames scale origin points = loop (HashSet.fromList allPoints) targets
 
 data Scene = Scene
   { _scale :: Int
-  , _origin :: Point
-  , _line :: HashSet Point
-  , _target :: Point
-  , _points :: HashSet Point
+  , _origin :: Point Int
+  , _line :: HashSet (Point Int)
+  , _target :: Point Int
+  , _points :: HashSet (Point Int)
   }
 
 shade :: Scene -> Int -> Int -> PixelRGB8
@@ -165,7 +157,7 @@ shade Scene {..} !x !y
   alive = point `HashSet.member` _points
   inLine = point `HashSet.member` _line
 
-plotLine :: Point -> Point -> [Point]
+plotLine :: Point Int -> Point Int -> [Point Int]
 plotLine (Point x0 y0) (Point x1 y1) = loop x0 y0 $ dx + dy
  where
   dx = abs $ x1 - x0

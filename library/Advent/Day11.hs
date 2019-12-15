@@ -11,12 +11,14 @@ import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
 import qualified Advent.IntCode.Program as Program
 import Advent.Point (Point(..))
+import qualified Advent.Point as Point
 import Data.Foldable (maximum)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import Data.List (last)
 import Data.List.Split (chunksOf)
 import Data.Text.IO (getContents)
+import Lens.Micro hiding (at)
 
 main :: Part -> IO ()
 main part = do
@@ -32,7 +34,7 @@ paint color program = last states
   output = unOutput $ snd $ run input program
   input = Input $ fromEnum <$> color : (current <$> states)
 
-render :: HashMap Point Color -> IO ()
+render :: HashMap (Point Int) Color -> IO ()
 render space = do
   traverse_ putStrLn $ chunksOf (mx + 1) $ do
     y <- [0 .. my]
@@ -44,21 +46,20 @@ render space = do
     White -> '█'
     Black -> ' '
 
-bounds :: HashMap Point Color -> Point
+bounds :: HashMap (Point Int) Color -> Point Int
 bounds space = Point (maximum $ _x <$> painted) (maximum $ _y <$> painted)
   where painted = HashMap.keys $ HashMap.filter (== White) space
 
 data State = State
-  { _panel :: HashMap Point Color
-  , _pos :: Point
+  { _panel :: HashMap (Point Int) Color
+  , _pos :: Point Int
   , _heading :: Heading
   }
 
 data Heading = North | South | East | West
 
 empty :: Color -> State
-empty color = State (HashMap.singleton start color) start North
-  where start = Point 0 0
+empty color = State (HashMap.singleton 0 color) 0 North
 
 data Color = Black | White
   deriving (Eq, Enum)
@@ -66,16 +67,16 @@ data Color = Black | White
 data Turn = Left | Right
   deriving (Eq, Enum)
 
-move :: Point -> Heading -> Turn -> (Point, Heading)
-move point heading0 turn = (step point heading, heading)
+move :: Point Int -> Heading -> Turn -> (Point Int, Heading)
+move point heading0 turn = (step heading point, heading)
   where heading = rotate heading0 turn
 
-step :: Point -> Heading -> Point
-step (Point x y) = \case
-  North -> Point x (y - 1)
-  South -> Point x (y + 1)
-  East -> Point (x + 1) y
-  West -> Point (x - 1) y
+step :: Heading -> Point Int -> Point Int
+step = \case
+  North -> Point.y -~ 1
+  South -> Point.y +~ 1
+  East -> Point.x +~ 1
+  West -> Point.x -~ 1
 
 rotate :: Heading -> Turn -> Heading
 rotate heading turn = case (heading, turn) of
@@ -104,5 +105,5 @@ scan state0 _ = [state0]
 current :: State -> Color
 current State {..} = at _pos _panel
 
-at :: Point -> HashMap Point Color -> Color
+at :: Point Int -> HashMap (Point Int) Color -> Color
 at point = HashMap.lookupDefault Black point
