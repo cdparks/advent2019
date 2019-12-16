@@ -46,18 +46,22 @@ decode = \case
     | otherwise -> Draw (Vec2 x y) (toEnum t) : decode os
   _ -> []
 
--- brittany-disable-next-binding
-
 react :: [Signal] -> [Int]
-react = loop 22
+react = (0 :) . findPaddle
  where
-  loop _ [] = []
-  loop _ (Draw paddle Paddle : ss) = loop (paddle ^. Vec2.x) ss
-  loop x (Draw ball Ball : ss)
-    | ball ^. Vec2.x < x = negate 1 : loop x ss
-    | ball ^. Vec2.x > x = 1 : loop x ss
-    | otherwise = 0 : loop x ss
-  loop x (_ : ss) = loop x ss
+  findPaddle = \case
+    Draw paddle Paddle : ss -> loop (paddle ^. Vec2.x) ss
+    _ : ss -> findPaddle ss
+    [] -> []
+
+  loop x = \case
+    Draw ball Ball : ss
+      | x < ball ^. Vec2.x -> 1 : loop x ss
+      | x > ball ^. Vec2.x -> negate 1 : loop x ss
+      | otherwise -> 0 : loop x ss
+    Draw paddle Paddle : ss -> loop (paddle ^. Vec2.x) ss
+    _ : ss -> loop x ss
+    [] -> []
 
 data Signal
   = Draw (Vec2 Int) Tile
