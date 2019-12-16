@@ -76,7 +76,7 @@ animate :: [Signal] -> FilePath -> IO ()
 animate signals filename = do
   putStrLn $ "Saving animation to " <> filename
   let frames = Image.scale 12 <$> generateFrames signals
-  case writeGifAnimation filename 2 LoopingNever frames of
+  case writeGifAnimation filename 2 LoopingForever frames of
     Left err -> putStrLn err
     Right action -> do
       action
@@ -106,6 +106,7 @@ dropFrames = loop
  where
   loop = \case
     [] -> []
+    [(_, x)] -> replicate 50 x
     (n, x) : xs -> x : loop (drop (upto n) xs)
 
   -- We'll drop up to 60 frames at a time in the middle of the
