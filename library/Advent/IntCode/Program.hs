@@ -27,6 +27,7 @@ asMemory = coerce
 data Patch
   = Noun Int
   | Verb Int
+  | Quarters Int
 
 patch :: [(Address, Patch)] -> Program -> Program
 patch patches = Program . execState preprocess . unProgram
@@ -35,3 +36,4 @@ patch patches = Program . execState preprocess . unProgram
   fromPatch = \case
     Noun i -> i
     Verb i -> i
+    Quarters i -> i

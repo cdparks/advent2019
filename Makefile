@@ -15,24 +15,25 @@ part ?= 1
 run: opt
 	DAY=$(day) PART=$(part) stack exec advent < inputs/day$(day).txt
 
-save ?= "day10.gif"
-scale ?= 12
-delay ?= 5 # 100ths of a second between frames
-
-## Animate Day 10 solution by setting [save=file] [scale=N] [delay=N]
-.PHONY: animate
-animate: opt
-	DAY=10 PART=2 SAVE=$(save) SCALE=$(scale) DELAY=$(delay) stack exec advent < inputs/day10.txt
+## Build optimized
+.PHONY: opt
+opt:
+	stack build advent --pedantic --interleaved-output
 
 ## Build unoptimized
 .PHONY: build
 build:
 	stack build advent --pedantic --fast --interleaved-output
 
-## Build optimized
-.PHONY: opt
-opt:
-	stack build advent --pedantic --interleaved-output
+## Animate Day 10 solution and save as asteroids.gif
+.PHONY: asteroids
+asteroids: opt
+	DAY=10 PART=2 SAVE=asteroids.gif SCALE=12 DELAY=5 stack exec advent < inputs/day10.txt
+
+## Animate Day 13 solution and save as breakout.gif
+.PHONY: breakout
+breakout: opt
+	DAY=13 PART=2 SAVE=breakout.gif stack exec advent < inputs/day13.txt
 
 ## Update compiler, dependencies, and tools
 .PHONY: update

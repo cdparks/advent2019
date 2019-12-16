@@ -5,6 +5,7 @@ where
 
 import Advent.Prelude
 
+import qualified Advent.Image as Image
 import Advent.List (focus)
 import Advent.Vec2 (Vec2(..))
 import Codec.Picture
@@ -93,26 +94,20 @@ collapse point@(Vec2 x y) = (collapsed, [point])
 
 animate :: Vec2 Int -> HashMap (Vec2 Int) [Vec2 Int] -> FilePath -> IO ()
 animate origin points filename = do
-  scale <- fromMaybe 12 <$> lookupNum "SCALE"
-  delay <- fromMaybe 8 <$> lookupNum "DELAY"
   putStrLn $ "Saving animation to " <> filename
-  let
-    frames = generateFrames scale origin points
-    eAction = writeGifAnimation filename delay LoopingForever frames
-  case eAction of
+  let frames = Image.scale 12 <$> generateFrames origin points
+  case writeGifAnimation filename 5 LoopingForever frames of
     Left err -> putStrLn err
     Right action -> do
       action
       putStrLn "Done"
-  where lookupNum name = (readMaybe =<<) <$> lookupEnv name
 
 getBounds :: [Vec2 Int] -> (Int, Int)
 getBounds = foldl' step (0, 0)
   where step (!mx, !my) (Vec2 x y) = (max mx x, max my y)
 
-generateFrames
-  :: Int -> Vec2 Int -> HashMap (Vec2 Int) [Vec2 Int] -> [Image PixelRGB8]
-generateFrames scale origin points = loop (HashSet.fromList allVec2) targets
+generateFrames :: Vec2 Int -> HashMap (Vec2 Int) [Vec2 Int] -> [Image PixelRGB8]
+generateFrames origin points = loop (HashSet.fromList allVec2) targets
  where
   (mx, my) = getBounds allVec2
 
@@ -131,15 +126,11 @@ generateFrames scale origin points = loop (HashSet.fromList allVec2) targets
   loop :: HashSet (Vec2 Int) -> [Vec2 Int] -> [Image PixelRGB8]
   loop _ [] = []
   loop !space (t : ts) =
-    generateImage
-        (shade (Scene scale origin (toLine t) t space))
-        (mx * scale)
-        (my * scale)
+    generateImage (shade (Scene origin (toLine t) t space)) mx my
       : loop (HashSet.delete t space) ts
 
 data Scene = Scene
-  { _scale :: Int
-  , _origin :: Vec2 Int
+  { _origin :: Vec2 Int
   , _line :: HashSet (Vec2 Int)
   , _target :: Vec2 Int
   , _points :: HashSet (Vec2 Int)
@@ -153,7 +144,7 @@ shade Scene {..} !x !y
   | alive = PixelRGB8 255 255 255
   | otherwise = PixelRGB8 0 0 0
  where
-  point = Vec2 (x `div` _scale) (y `div` _scale)
+  point = Vec2 x y
   alive = point `HashSet.member` _points
   inLine = point `HashSet.member` _line
 
