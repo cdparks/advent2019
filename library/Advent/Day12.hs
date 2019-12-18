@@ -1,4 +1,7 @@
-module Advent.Day12 where
+module Advent.Day12
+  ( main
+  )
+where
 
 import Advent.Prelude hiding (head, tail)
 
