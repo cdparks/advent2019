@@ -3,7 +3,7 @@ module Advent.Day12
   )
 where
 
-import Advent.Prelude hiding (head, tail)
+import Advent.Prelude
 
 import Advent.Body (Body(..))
 import qualified Advent.Body as Body
