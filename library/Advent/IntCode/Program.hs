@@ -28,6 +28,7 @@ data Patch
   = Noun Int
   | Verb Int
   | Quarters Int
+  | Patch Int
 
 patch :: [(Address, Patch)] -> Program -> Program
 patch patches = Program . execState preprocess . unProgram
@@ -37,3 +38,4 @@ patch patches = Program . execState preprocess . unProgram
     Noun i -> i
     Verb i -> i
     Quarters i -> i
+    Patch i -> i
