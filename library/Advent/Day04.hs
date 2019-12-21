@@ -7,6 +7,7 @@ where
 
 import Advent.Prelude
 
+import Advent.Text (toDigit)
 import Control.Monad.ST (ST, runST)
 import qualified Data.Vector.Unboxed as U
 import Data.Vector.Unboxed.Mutable (MVector)
@@ -21,8 +22,10 @@ main part =
     Part2 -> valid2
 
 -- Strict pair
-data Pair = Pair {-# UNPACK #-} Int {-# UNPACK #-} Int
-  deriving Show
+data Pair =
+  Pair {-# UNPACK #-}Int
+       {-# UNPACK #-}Int
+  deriving (Show)
 
 valid1 :: [Pair] -> Bool
 valid1 ps = any same ps && all neverDecreases ps
@@ -49,4 +52,4 @@ pairs :: [Int] -> [Pair]
 pairs xs = zipWith Pair xs $ drop 1 xs
 
 digits :: Int -> [Int]
-digits = fmap (subtract zero . ord) . show where zero = ord '0'
+digits = fmap toDigit . show

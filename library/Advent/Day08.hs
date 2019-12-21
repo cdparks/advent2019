@@ -5,12 +5,12 @@ where
 
 import Advent.Prelude
 
-import Data.Char (ord)
 import Data.Foldable (minimumBy)
 import Data.List.Split (chunksOf)
 import qualified Data.Text as T
 import Data.Vector.Unboxed (Vector, (!))
 import qualified Data.Vector.Unboxed as U
+import Advent.Text (toDigit)
 
 main :: Part -> IO ()
 main part = do
@@ -43,7 +43,7 @@ parse n text = case T.length text of
   where ~(layer, rest) = T.splitAt n text
 
 new :: Text -> Layer
-new = U.fromList . fmap (subtract zero . ord) . T.unpack where zero = ord '0'
+new = U.fromList . fmap toDigit . T.unpack
 
 checksum :: Layer -> Int
 checksum layer = count 1 layer * count 2 layer
