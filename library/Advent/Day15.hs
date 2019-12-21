@@ -5,13 +5,14 @@ where
 
 import Advent.Prelude hiding (each, head, last, next)
 
+import Advent.Heading (Heading(..))
+import qualified Advent.Heading as Heading
 import Advent.IntCode (run)
 import Advent.IntCode.Input (Input(..))
 import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
 import qualified Advent.IntCode.Program as Program
 import Advent.Vec2 (Vec2(..))
-import qualified Advent.Vec2 as Vec2
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
@@ -37,13 +38,6 @@ data Status
   = Hit
   | Moved
   | Found
-  deriving (Eq, Show, Enum)
-
-data Heading
-  = North
-  | South
-  | East
-  | West
   deriving (Eq, Show, Enum)
 
 fromHeading :: Heading -> Int
@@ -99,19 +93,19 @@ react = (world0 :) . loop world0
      Hit:signals -> do
        let
          next = current
-           & space %~ (HashMap.insert (move (current ^. heading) (current ^. pos)) Wall)
-           & heading %~ left
+           & space %~ (HashMap.insert (Heading.step (current ^. heading) (current ^. pos)) Wall)
+           & heading %~ Heading.left
        next : loop next signals
      signal:signals -> do
        let
          entity
            | signal == Found = Goal
            | otherwise = Empty
-         nextPos = move (current ^. heading) (current ^. pos)
+         nextPos = Heading.step (current ^. heading) (current ^. pos)
          next = current
            & space %~ (HashMap.insertWith keepStart nextPos entity)
            & pos .~ nextPos
-           & heading %~ right
+           & heading %~ Heading.right
        if next ^. pos == 0
          then [next]
          else next : loop next signals
@@ -139,7 +133,7 @@ search area start goal = loop HashSet.empty [(start, 0)]
         loop (HashSet.insert point seen) queue
 
   children point distance = do
-    next <- (`move` point) <$> [North ..]
+    next <- (`Heading.step` point) <$> [North ..]
     entity <- maybeToList $ HashMap.lookup next area
     guard $ entity /= Wall
     pure (next, distance)
@@ -163,7 +157,7 @@ fill start = subtract 1 . flip (loop 0) [start]
 
   children remaining points = do
     point <- points
-    next <- (`move` point) <$> [North ..]
+    next <- (`Heading.step` point) <$> [North ..]
     guard $ next `HashSet.member` remaining
     pure next
 
@@ -175,24 +169,3 @@ each p world = do
   (point, entity) <- HashMap.toList $ world ^. space
   guard $ p entity
   pure point
-
-left :: Heading -> Heading
-left = \case
-  North -> West
-  South -> East
-  East -> North
-  West -> South
-
-right :: Heading -> Heading
-right = \case
-  North -> East
-  South -> West
-  East -> South
-  West -> North
-
-move :: Heading -> Vec2 Int -> Vec2 Int
-move = \case
-  North -> Vec2.y +~ 1
-  South -> Vec2.y -~ 1
-  East -> Vec2.x +~ 1
-  West -> Vec2.x -~ 1
