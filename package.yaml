@@ -50,6 +50,7 @@ library:
     - microlens-mtl
     - mtl
     - pipes
+    - pqueue
     - relude
     - split
     - text

@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -9,12 +8,14 @@ where
 
 import Advent.Prelude hiding (yield)
 
+import Advent.Queue (HasQueue(..))
+import qualified Advent.Queue as Queue
 import Control.Exception (throwIO)
 import Data.Attoparsec.Text hiding (D)
 import Data.Char (isUpper)
 import Data.HashMap.Strict ((!))
 import qualified Data.HashMap.Strict as HashMap
-import Data.Sequence (pattern (:<|), pattern Empty, Seq)
+import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import Data.Text (pack)
 import Data.Text.IO (getContents)
@@ -40,7 +41,7 @@ minimumOre graph want = evalState process World
     }
 
 process :: MonadState World m => m Integer
-process = drain $ \case
+process = Queue.drain _ore $ \case
   ("ORE", need) -> ore += need
   (label, need) -> do
     Reaction yield ingredients <- reaction label
@@ -53,14 +54,7 @@ process = drain $ \case
       then share label $ negate deficit
       else do
         share label leftovers
-        request $ fmap (batches *) <$> ingredients
-
-drain :: MonadState World m => ((Label, Need) -> m ()) -> m Integer
-drain f = loop
- where
-  loop = pop >>= \case
-    Nothing -> use ore
-    Just req -> f req *> loop
+        Queue.extend $ fmap (batches *) <$> ingredients
 
 multiplier :: Integer -> Integer -> Integer
 multiplier need yield
@@ -104,6 +98,9 @@ reactions = lens _reactions $ \w r -> w { _reactions = r }
 queue :: Lens' World (Seq (Label, Need))
 queue = lens _queue $ \w q -> w { _queue = q }
 
+instance HasQueue World (Label, Need) where
+  queueLens = queue
+
 extras :: Lens' World (HashMap Label Yield)
 extras = lens _extras $ \w e -> w { _extras = e }
 
@@ -112,18 +109,6 @@ ore = lens _ore $ \w o -> w { _ore = o }
 
 reaction :: MonadState World m => Label -> m Reaction
 reaction label = (! label) <$> use reactions
-
-pop :: MonadState World m => m (Maybe (Label, Need))
-pop = do
-  q <- use queue
-  case q of
-    Empty -> pure Nothing
-    x :<| xs -> do
-      queue .= xs
-      pure $ Just x
-
-request :: MonadState World m => Seq (Label, Need) -> m ()
-request ingredients = queue %= (<> ingredients)
 
 share :: MonadState World m => Label -> Yield -> m ()
 share label yield = extras %= (HashMap.insert label yield)

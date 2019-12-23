@@ -12,11 +12,13 @@ import Advent.IntCode.Input (Input(..))
 import Advent.IntCode.Output (Output(..))
 import Advent.IntCode.Program (Program)
 import qualified Advent.IntCode.Program as Program
+import qualified Advent.Queue as Queue
 import Advent.Vec2 (Vec2(..))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
 import Data.List (head, last)
+import qualified Data.Sequence as Seq
 import Data.Text.IO (getContents)
 import Lens.Micro hiding (each)
 
@@ -121,18 +123,20 @@ shortestDistance world =
 -- brittany-disable-next-binding
 
 search :: HashMap (Vec2 Int) Entity -> Vec2 Int -> Vec2 Int -> Int
-search area start goal = loop HashSet.empty [(start, 0)]
+search area start goal = evalState (loop HashSet.empty) $ Seq.singleton (start, 0)
  where
-  loop seen = \case
-    [] -> maxBound
-    (point, !distance) : points
-      | point == goal -> distance
-      | point `HashSet.member` seen -> loop seen points
-      | otherwise -> do
-        let queue = points <> children point (distance + 1)
-        loop (HashSet.insert point seen) queue
+  loop seen = do
+    mCurrent <- Queue.pop
+    case mCurrent of
+      Nothing -> pure maxBound
+      Just (point, !distance)
+        | point == goal -> pure distance
+        | point `HashSet.member` seen -> loop seen
+        | otherwise -> do
+          Queue.extend $ children point $ distance + 1
+          loop $ HashSet.insert point seen
 
-  children point distance = do
+  children point distance = Seq.fromList $ do
     next <- (`Heading.step` point) <$> [North ..]
     entity <- maybeToList $ HashMap.lookup next area
     guard $ entity /= Wall
