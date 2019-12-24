@@ -5,6 +5,7 @@ module Advent.Vec2
   , x
   , y
   , scalars
+  , neighbors
   )
 where
 
@@ -37,6 +38,10 @@ y = lens _y $ \p v -> p { _y = v }
 
 scalars :: Vec2 a -> [a]
 scalars v = (v ^.) <$> [x, y]
+
+neighbors :: Num a => Vec2 a -> [Vec2 a]
+neighbors (Vec2 x0 y0) =
+  [Vec2 (x0 + 1) y0, Vec2 (x0 - 1) y0, Vec2 x0 (y0 + 1), Vec2 x0 (y0 - 1)]
 
 -- brittany-disable-next-binding
 
